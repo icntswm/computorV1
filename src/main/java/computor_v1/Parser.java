@@ -12,14 +12,26 @@ public class Parser {
     public Set<String> getEquation() {
         return equation;
     }
-    private void equationElementProcessing(String str, String turn) {
+    private void checkingTwoCharactersSideBySide(int i, String str) throws WrongEquationException {
+        if (i + 1 < str.length() && ((str.charAt(i) == '-' || str.charAt(i) == '+') && (str.charAt(i + 1) == '-' || str.charAt(i + 1) == '+')))
+            throw new WrongEquationException("Два подряд идущих символа (" + str.charAt(i) + str.charAt(i + 1) + ")");
+    }
+    private void equationElementProcessing(String str, String turn) throws WrongEquationException {
+        System.out.println("STRING: " + str);
         for (int i = 1; i < str.length(); ++i) {
             int start = i - 1;
-            while (i < str.length() && str.charAt(i) != '-' && str.charAt(i) != '+')
+            checkingTwoCharactersSideBySide(start, str);
+            while (i < str.length() && str.charAt(i) != '-' && str.charAt(i) != '+') {
                 i++;
+                checkingTwoCharactersSideBySide(i, str);
+            }
+            System.out.println("----> " + str.substring(start, i));
             if (turn.equals("left")) {
                 if (start == 0 && str.charAt(0) != '-')
-                    equation.add("+" + str.substring(start, i));
+                    if (str.charAt(0) != '+')
+                        equation.add("+" + str.substring(start, i));
+                    else
+                        equation.add(str.substring(start, i));
                 else
                     if (str.charAt(start) == '-' && equation.contains("+" + str.substring(start + 1, i)))
                         equation.remove("+" + str.substring(start + 1, i));
@@ -55,31 +67,103 @@ public class Parser {
         }
         return newStr.toString();
     }
-    //checkingForAMatchingCharacter
-    private void checkingElementsOfEquationForm() throws WrongEquationException, NumberFormatException {
-  //      checkingForAMatchingCharacter(equation.iterator().next());
-        for (String elem : equation) {
-            if (elem.charAt(0) != '-' && elem.charAt(0) != '+')
-                throw new WrongEquationException("Неправильный символ перед элементом уравнения '" + elem + "' (поддерживаются '-' и '+')");
-            String number = null;
-            int i = 1;
-            System.out.println("elem: " + elem);
-            for (; i < elem.length() && elem.charAt(i) != '*'; i++);
-            number = elem.substring(1, i++);
-            int start = i;
-            if (number == null)
-                throw new WrongEquationException("Несоответствие форме: a * x^p");
-            else
-                numbersFromEquation.add(Double.parseDouble(number));
-            for (; i < elem.length() && elem.charAt(i) != '^'; i++);
-            if (searchVariable == null)
+    private Boolean firstVersionFormElementEquation(String elem) { // A*X^P
+        System.out.println("firstVersionStr: " + elem);
+        if (elem.charAt(0) != '-' && elem.charAt(0) != '+')
+            return false;
+        int i = 1;
+        while (i < elem.length() && elem.charAt(i) != '*')
+            ++i;
+        try {
+            double checkVar = Double.parseDouble(elem.substring(1, i));
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        int start = ++i;
+        while (i < elem.length() && elem.charAt(i) != '^')
+            ++i;
+        if (searchVariable == null) {
+            searchVariable = elem.substring(start, i);
+            if (searchVariable.equals(""))
+                return false;
+        }
+        else
+            if (!searchVariable.equals(elem.substring(start, i)))
+                return false;
+        try {
+            int checkVar = Integer.parseInt(elem.substring(++i));
+            if (checkVar < 0)
+                return false;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return true;
+    }
+    private Boolean secondVersionFormElementEquation(String elem) { // X
+        System.out.println("secondVersionStr: " + elem);
+        if (elem.charAt(0) != '-' && elem.charAt(0) != '+')
+            return false;
+        if (searchVariable == null) {
+            searchVariable = elem.substring(1);
+            if (searchVariable.equals(""))
+                return false;
+        } else
+            if (!searchVariable.equals(elem.substring(1)))
+                return false;
+        return true;
+    }
+    private Boolean thirdVersionFormElementEquation(String elem) { // X*X*X...
+        System.out.println("thirdVersionStr: " + elem);
+        if (elem.charAt(0) != '-' && elem.charAt(0) != '+')
+            return false;
+        int i = 1;
+        int start = 1;
+        while (i < elem.length()) {
+            while (i < elem.length() && elem.charAt(i) != '*')
+                ++i;
+            if (searchVariable == null) {
                 searchVariable = elem.substring(start, i);
-            else
+                if (searchVariable.equals(""))
+                    return false;
+            } else
                 if (!searchVariable.equals(elem.substring(start, i)))
-                    throw new WrongEquationException("Несоответствие имен искомых переменных");
-            String coeff = elem.substring(i + 1);
-            if (!coeff.equals("1") && !coeff.equals("2") && !coeff.equals("0"))
-                throw new WrongEquationException("Степень числа можнет быть только целым числом в диапазоне от 0 до 2 включительно");
+                    return false;
+            start = ++i;
+        }
+        return true;
+    }
+
+    private Boolean fourthVersionFormElementEquation(String elem) { // X^P
+        System.out.println("fourthVersionStr: " + elem);
+        if (elem.charAt(0) != '-' && elem.charAt(0) != '+')
+            return false;
+        int i = 1;
+        while (i < elem.length() && elem.charAt(i) != '^')
+            ++i;
+        if (searchVariable == null) {
+            searchVariable = elem.substring(1, i);
+            if (searchVariable.equals(""))
+                return false;
+        }
+        else
+            if (!searchVariable.equals(elem.substring(1, i)))
+                return false;
+        try {
+            int checkVar = Integer.parseInt(elem.substring(++i));
+            if (checkVar < 0)
+                return false;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return true;
+    }
+    private void checkingElementsOfEquationForm() throws WrongEquationException{
+        for (String elem : equation) {
+            if (!firstVersionFormElementEquation(elem)
+                    && !secondVersionFormElementEquation(elem)
+                    && !thirdVersionFormElementEquation(elem)
+                    && !fourthVersionFormElementEquation(elem))
+                throw new WrongEquationException("Элемент уравнения '" + elem + "' не подходит ни под одну из допустимых форм записи (X, X*X, X^P, A*X^P)");
         }
     }
     public void parsingStart(String[] strArg) {
@@ -92,9 +176,6 @@ public class Parser {
             checkingElementsOfEquationForm();
         } catch (WrongEquationException e) {
             System.err.println(e.getMessage());
-            System.exit(1);
-        } catch (NumberFormatException e) {
-            System.err.println("Ошибка: В уравнении есть число, в котором имеются буквы");
             System.exit(1);
         }
         System.out.println(equation);
