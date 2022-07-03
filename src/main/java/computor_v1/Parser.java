@@ -2,14 +2,15 @@ package computor_v1;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.Set;
 
 public class Parser {
-    private static Set<String> equation = new LinkedHashSet<>();
+    private static LinkedList<String> equation = new LinkedList<>();
     private static Set<Double> numbersFromEquation = new LinkedHashSet<>();
     private static String searchVariable = null;
 
-    public Set<String> getEquation() {
+    public LinkedList<String> getEquation() {
         return equation;
     }
     private void checkingTwoCharactersSideBySide(int i, String str) throws WrongEquationException {
@@ -32,13 +33,18 @@ public class Parser {
                         equation.add("+" + str.substring(start, i));
                     else
                         equation.add(str.substring(start, i));
-                else
-                    if (str.charAt(start) == '-' && equation.contains("+" + str.substring(start + 1, i)))
+                else {
+                    System.out.println("CHECK: " + str.substring(start + 1, i));
+                    if (str.charAt(start) == '-' && equation.contains("+" + str.substring(start + 1, i))) {
+                        System.out.println("1");
                         equation.remove("+" + str.substring(start + 1, i));
-                    else if (str.charAt(start) == '+' && equation.contains("-" + str.substring(start + 1, i)))
+                    } else if (str.charAt(start) == '+' && equation.contains("-" + str.substring(start + 1, i))) {
+                        System.out.println("2");
                         equation.remove("-" + str.substring(start + 1, i));
-                    else
+                    } else {
                         equation.add(str.substring(start, i));
+                    }
+                }
             } else if (turn.equals("right")) {
                 if (str.charAt(start) != '-' && str.charAt(start) != '+')
                     if (equation.contains("+" + str.substring(start, i)))
