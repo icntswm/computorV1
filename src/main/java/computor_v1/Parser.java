@@ -34,10 +34,8 @@ public class Parser {
                         equation.add(str.substring(start, i));
                 else {
                     if (str.charAt(start) == '-' && equation.contains("+" + str.substring(start + 1, i))) {
-                        System.out.println("1");
                         equation.remove("+" + str.substring(start + 1, i));
                     } else if (str.charAt(start) == '+' && equation.contains("-" + str.substring(start + 1, i))) {
-                        System.out.println("2");
                         equation.remove("-" + str.substring(start + 1, i));
                     } else {
                         equation.add(str.substring(start, i));
@@ -368,7 +366,7 @@ public class Parser {
                 throw new WrongEquationException("Элемент уравнения '" + elem + "' не подходит ни под одну из допустимых форм записи (X, X*X, X^P, A*X^P, где 0 <= P <= 2)");
         }
         if (equation.isEmpty()) {
-            System.out.println("Искомое значение может быть любым числом" + searchVariable);
+            System.out.println("Искомое значение либо отсутствует, либо может быть равно любому числу");
             System.exit(0);
         }
         creatingFinalEquation();
