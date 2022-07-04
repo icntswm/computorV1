@@ -7,6 +7,7 @@ public class Main {
             System.err.println("Ошибка: Отсутствует уравнение");
             System.exit(1);
         }
+        System.out.println("Исходное уравнение: " + args[0]);
         parser.parsingStart(args[0].split("="));
     }
 }
